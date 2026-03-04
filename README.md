@@ -107,6 +107,7 @@ When file logging is enabled, each session appends a block similar to:
 ## Configuration File
 
 Settings are stored in `payShield_Command_Sender_Config.json` in the working directory. The file is created automatically on first run and can be edited manually or deleted to reset to defaults.
+<img width="1121" height="1087" alt="image" src="https://github.com/user-attachments/assets/974459c1-00b5-4873-8827-3d156074f4d3" />
 
 ---
 
