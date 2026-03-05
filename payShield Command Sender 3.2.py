@@ -27,7 +27,7 @@ _IDLE_POLL_MS = 16   # ~1 frame @ 60 Hz
 class TLSClientGUI:
     def __init__(self, master):
         self.master = master
-        master.title("Payshield Command Sender 3.2")
+        master.title("payShield Command Sender 3.2.1")
 
         self.style = ttk.Style()
         self.style.theme_use('clam')
@@ -500,9 +500,23 @@ class TLSClientGUI:
                 raw_lines = [c.strip() for c in
                              self.command_entry.get("1.0", tk.END).splitlines() if c.strip()]
                 for line in raw_lines:
-                    processed = _HEX_INLINE_RE.sub(
-                        lambda m: m.group(1).encode('utf-8').hex().upper(), line)
-                    payload = ('HEAD' + processed).encode('utf-8')
+                    # Build the payload as bytes so that <HEXDATA> segments are inserted
+                    # as decoded raw bytes while surrounding ASCII text is encoded normally.
+                    # e.g. "NC<0102ABCD>" → b'NC' + b'\x01\x02\xab\xcd'
+                    payload = b'HEAD'
+                    last = 0
+                    for m in _HEX_INLINE_RE.finditer(line):
+                        # encode the ASCII text before this match
+                        payload += line[last:m.start()].encode('utf-8')
+                        # decode the hex content inside <...> as raw bytes
+                        hex_content = m.group(1).replace(' ', '')
+                        if len(hex_content) % 2 != 0:
+                            raise ValueError(
+                                f"Odd-length hex inside <...>: '{m.group(1)}'")
+                        payload += bytes.fromhex(hex_content)
+                        last = m.end()
+                    # encode any remaining ASCII text after the last match
+                    payload += line[last:].encode('utf-8')
                     cmds.append(pack('>h', len(payload)) + payload)
             else:
                 hex_str = self.hex_command_entry.get().replace(" ", "").replace("\n", "")
